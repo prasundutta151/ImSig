@@ -1,0 +1,56 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import  scipy.signal as ssig
+import numpy.random as rnd
+import numpy.fft as nfft
+
+def ButterWorth2D(xx, yy, par):
+
+    nn = par[0]
+    l0 = par[1]
+    ButterWx = 1./(1.+(xx/l0)**nn)
+    ButterWy = 1./(1.+(yy/l0)**nn)
+
+    return ButterWx*ButterWy
+
+NGrid =512
+NData = NGrid*NGrid
+ll = 240./256.
+nn = 12
+
+data = rnd.uniform(0., 1., NData)
+
+data = np.reshape(data, (NGrid, NGrid))
+
+xy = np.linspace(-1., 1., 512)
+xx, yy = np.meshgrid(xy,xy)
+par_ = [nn,ll]
+BW2D = ButterWorth2D(xx, yy, par_)
+
+dataW = BW2D*data
+
+Kernel_size = 2
+#inv_kernel_size = 1./Kernel_size
+
+dataWF = nfft.fft2(dataW)
+dataWSF = nfft.fft2(dataW**2)
+
+
+kxy = np.linspace(-NGrid/2, NGrid/2,NGrid)
+kx, ky = np.meshgrid(kxy,kxy)
+
+kernel = np.exp(-(kx**2+ky**2)/2./Kernel_size**2.)
+dataR = nfft.ifft2(dataWF*kernel)
+dataSR = nfft.ifft2(dataWSF*kernel)
+
+sigD = dataSR.real - (dataR.real)**2
+plt.clf()
+plt.ion()
+plt.subplot(1,2,1)
+plt.imshow(dataW)
+plt.colorbar()
+plt.subplot(1,2,2)
+plt.imshow(kernel)
+plt.colorbar()
+plt.show()
+
